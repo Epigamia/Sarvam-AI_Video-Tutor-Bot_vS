@@ -75,6 +75,7 @@ export async function fetchYouTubeTranscript(url: string): Promise<string> {
         "--skip-download",
         "--no-warnings",
         "--quiet",
+        "--extractor-args", "youtube:player_client=android,web",
         "-o", outputTemplate,
         url,
       ],
