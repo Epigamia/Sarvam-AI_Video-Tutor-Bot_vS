@@ -28,8 +28,8 @@ export function extractVideoId(url: string): string | null {
   return null;
 }
 
-function parseVTT(vtt: string): string {
-  const lines = vtt.split("\n");
+function parseVTT(content: string): string {
+  const lines = content.split("\n");
   const textLines: string[] = [];
 
   for (const line of lines) {
@@ -64,7 +64,7 @@ export async function fetchYouTubeTranscript(url: string): Promise<string> {
   fs.mkdirSync(tmpDir, { recursive: true });
   const outputTemplate = path.join(tmpDir, videoId);
 
-  // Write cookies to a temp file if provided via environment variable
+  // Write cookies to a temp file if provided
   let cookiesPath: string | null = null;
   if (process.env.YOUTUBE_COOKIES) {
     cookiesPath = path.join(tmpDir, "cookies.txt");
@@ -75,17 +75,13 @@ export async function fetchYouTubeTranscript(url: string): Promise<string> {
     "--write-auto-sub",
     "--write-sub",
     "--sub-lang", "en",
-    "--sub-format", "vtt",
     "--skip-download",
     "--no-warnings",
     "--quiet",
     "-o", outputTemplate,
   ];
 
-  if (cookiesPath) {
-    args.push("--cookies", cookiesPath);
-  }
-
+  if (cookiesPath) args.push("--cookies", cookiesPath);
   args.push(url);
 
   try {
@@ -97,9 +93,9 @@ export async function fetchYouTubeTranscript(url: string): Promise<string> {
     if (cookiesPath && fs.existsSync(cookiesPath)) fs.unlinkSync(cookiesPath);
   }
 
-  // yt-dlp names files like videoId.en.vtt or videoId.en-US.vtt
+  // Find any subtitle file yt-dlp wrote (vtt, srt, srv3, etc.)
   const files = fs.existsSync(tmpDir)
-    ? fs.readdirSync(tmpDir).filter((f) => f.startsWith(videoId) && f.endsWith(".vtt"))
+    ? fs.readdirSync(tmpDir).filter((f) => f.startsWith(videoId) && !f.endsWith("cookies.txt"))
     : [];
 
   if (files.length === 0) {
@@ -108,11 +104,11 @@ export async function fetchYouTubeTranscript(url: string): Promise<string> {
     );
   }
 
-  const vttPath = path.join(tmpDir, files[0]);
-  const vttContent = fs.readFileSync(vttPath, "utf-8");
-  fs.unlinkSync(vttPath);
+  const subPath = path.join(tmpDir, files[0]);
+  const content = fs.readFileSync(subPath, "utf-8");
+  fs.unlinkSync(subPath);
 
-  const transcript = parseVTT(vttContent);
+  const transcript = parseVTT(content);
   if (!transcript) throw new Error("Subtitle file was empty after processing.");
 
   return transcript;
