@@ -1,7 +1,4 @@
-import ytdl from "@distube/ytdl-core";
-import fs from "fs";
-import path from "path";
-import os from "os";
+import { YoutubeTranscript } from "youtube-transcript";
 
 export function validateYouTubeUrl(url: string): boolean {
   const patterns = [
@@ -12,30 +9,41 @@ export function validateYouTubeUrl(url: string): boolean {
   return patterns.some((p) => p.test(url));
 }
 
-export async function downloadYouTubeAudio(
-  url: string,
-  sessionId: string
-): Promise<string> {
-  const dir = path.join(os.tmpdir(), "video-tutor", sessionId);
-  fs.mkdirSync(dir, { recursive: true });
+export function extractVideoId(url: string): string | null {
+  const patterns = [
+    /[?&]v=([\w-]+)/,
+    /youtu\.be\/([\w-]+)/,
+    /shorts\/([\w-]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
 
-  const outputPath = path.join(dir, "youtube_audio.webm");
+export async function fetchYouTubeTranscript(url: string): Promise<string> {
+  const videoId = extractVideoId(url);
+  if (!videoId) throw new Error("Could not extract video ID from URL");
 
-  return new Promise((resolve, reject) => {
-    const stream = ytdl(url, {
-      filter: "audioonly",
-      quality: "lowestaudio",
-    });
+  let entries;
+  try {
+    entries = await YoutubeTranscript.fetchTranscript(videoId);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.toLowerCase().includes("disabled") || msg.toLowerCase().includes("no transcript")) {
+      throw new Error(
+        "This video does not have captions/subtitles available. Please upload the video file directly instead."
+      );
+    }
+    throw new Error(`Failed to fetch YouTube transcript: ${msg}`);
+  }
 
-    const writeStream = fs.createWriteStream(outputPath);
-    stream.pipe(writeStream);
-
-    stream.on("error", (err) =>
-      reject(new Error(`YouTube download failed: ${err.message}`))
+  if (!entries || entries.length === 0) {
+    throw new Error(
+      "No transcript found for this video. Please upload the video file directly instead."
     );
-    writeStream.on("finish", () => resolve(outputPath));
-    writeStream.on("error", (err) =>
-      reject(new Error(`File write failed: ${err.message}`))
-    );
-  });
+  }
+
+  return entries.map((e) => e.text).join(" ").replace(/\s+/g, " ").trim();
 }
