@@ -10,10 +10,12 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ role, content, isStreaming }: MessageBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [ttsError, setTtsError] = useState("");
 
   async function handleTTS() {
     if (isPlaying || !content) return;
     setIsPlaying(true);
+    setTtsError("");
 
     try {
       const response = await fetch("/api/tts", {
@@ -23,15 +25,28 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
       });
 
       const data = await response.json();
+      if (data.error) {
+        console.error("TTS error:", data.error);
+        setTtsError(data.error);
+        setIsPlaying(false);
+        return;
+      }
       if (data.audio) {
+        // Sarvam returns WAV audio at 8kHz
         const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
         audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => setIsPlaying(false);
+        audio.onerror = (e) => {
+          console.error("Audio playback error:", e);
+          setIsPlaying(false);
+        };
         await audio.play();
       } else {
+        console.error("No audio in TTS response:", data);
         setIsPlaying(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("TTS fetch failed:", err);
+      setTtsError(err instanceof Error ? err.message : "TTS failed");
       setIsPlaying(false);
     }
   }
@@ -61,22 +76,27 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
         </p>
 
         {!isUser && content && !isStreaming && (
-          <button
-            onClick={handleTTS}
-            disabled={isPlaying}
-            className="mt-2 text-gray-500 hover:text-blue-400 transition-colors disabled:text-blue-400"
-            title="Listen to response"
-          >
-            {isPlaying ? (
-              <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-              </svg>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={handleTTS}
+              disabled={isPlaying}
+              className="text-gray-500 hover:text-blue-400 transition-colors disabled:text-blue-400"
+              title="Listen to response"
+            >
+              {isPlaying ? (
+                <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                </svg>
+              )}
+            </button>
+            {ttsError && (
+              <span className="text-xs text-red-400">{ttsError}</span>
             )}
-          </button>
+          </div>
         )}
       </div>
     </div>

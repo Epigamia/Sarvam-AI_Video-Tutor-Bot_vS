@@ -31,7 +31,8 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 }
 
 export async function textToSpeech(text: string): Promise<string> {
-  const truncated = text.slice(0, 2500);
+  // bulbul:v1 supports up to 500 chars per input
+  const truncated = text.slice(0, 500);
 
   const response = await fetch(`${BASE_URL}/text-to-speech`, {
     method: "POST",
@@ -46,9 +47,9 @@ export async function textToSpeech(text: string): Promise<string> {
       model: "bulbul:v1",
       pitch: 0,
       pace: 1.0,
-      loudness: 1.0,
+      loudness: 1.5,
       speech_sample_rate: 22050,
-      enable_preprocessing: true,
+      enable_preprocessing: false,
     }),
   });
 
@@ -58,7 +59,10 @@ export async function textToSpeech(text: string): Promise<string> {
   }
 
   const data = await response.json();
-  return data.audios?.[0] || "";
+  if (!data.audios?.[0]) {
+    throw new Error(`TTS returned no audio. Response: ${JSON.stringify(data)}`);
+  }
+  return data.audios[0];
 }
 
 export interface LLMMessage {
