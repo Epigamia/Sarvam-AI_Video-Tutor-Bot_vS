@@ -43,7 +43,7 @@ export async function textToSpeech(text: string): Promise<string> {
     body: JSON.stringify({
       inputs: [truncated],
       target_language_code: "en-IN",
-      speaker: "meera",
+      speaker: "anushka",
       model: "bulbul:v1",
       pitch: 0,
       pace: 1.0,
