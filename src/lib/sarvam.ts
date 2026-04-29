@@ -31,7 +31,7 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 }
 
 export async function textToSpeech(text: string): Promise<string> {
-  // bulbul:v1 supports up to 500 chars per input
+  // bulbul:v2 supports up to 500 chars per input
   const truncated = text.slice(0, 500);
 
   const response = await fetch(`${BASE_URL}/text-to-speech`, {
@@ -44,7 +44,7 @@ export async function textToSpeech(text: string): Promise<string> {
       inputs: [truncated],
       target_language_code: "en-IN",
       speaker: "anushka",
-      model: "bulbul:v1",
+      model: "bulbul:v2",
       pitch: 0,
       pace: 1.0,
       loudness: 1.5,
