@@ -59,6 +59,15 @@ export default function Home() {
         const decoder = new TextDecoder();
         let fullContent = "";
 
+        function extractContent(raw: string): string {
+          // Remove complete <think>...</think> blocks
+          let result = raw.replace(/<think>[\s\S]*?<\/think>/g, "");
+          // If there's still an unclosed <think>, hide everything from it onwards (still thinking)
+          const openIdx = result.indexOf("<think>");
+          if (openIdx !== -1) result = result.substring(0, openIdx);
+          return result.trim();
+        }
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -72,10 +81,7 @@ export default function Home() {
               const parsed = JSON.parse(data);
               if (parsed.content) {
                 fullContent += parsed.content;
-                const cleaned = fullContent
-                  .replace(/<think>[\s\S]*?<\/think>/g, "")
-                  .replace(/<think>[\s\S]*/g, "")
-                  .trim();
+                const cleaned = extractContent(fullContent);
                 setMessages((prev) => {
                   const updated = [...prev];
                   const last = updated[updated.length - 1];
@@ -87,6 +93,19 @@ export default function Home() {
               // skip unparseable lines
             }
           }
+        }
+
+        // After streaming ends, if content is still empty (e.g. model never closed <think>),
+        // strip all think tags and show whatever text remains
+        const finalContent = extractContent(fullContent);
+        if (!finalContent && fullContent) {
+          const fallback = fullContent.replace(/<\/?think>/g, "").trim();
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last?.role === "assistant") last.content = fallback;
+            return updated;
+          });
         }
       } catch (err) {
         console.error("Chat failed:", err);
