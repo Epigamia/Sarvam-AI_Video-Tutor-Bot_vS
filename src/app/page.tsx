@@ -141,10 +141,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col h-screen">
       <header className="border-b border-gray-800 px-4 py-3 bg-gray-900 flex items-center gap-3">
-        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-sm font-bold">K</div>
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold">3B</div>
         <div>
-          <h1 className="text-base font-semibold">Khan Academy Tutor</h1>
-          <p className="text-xs text-gray-500">Ask me anything about the video</p>
+          <h1 className="text-base font-semibold">Neural Networks Tutor</h1>
+          <p className="text-xs text-gray-500">3Blue1Brown · But what is a neural network?</p>
         </div>
       </header>
 

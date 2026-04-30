@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import { getKhanTranscript } from "@/lib/hardcoded-transcript";
+import { getVideoTranscript } from "@/lib/hardcoded-transcript";
 import { createSession, updateSession } from "@/lib/session";
-
-export const maxDuration = 120;
 
 export async function POST() {
   try {
-    const transcript = await getKhanTranscript();
+    const transcript = getVideoTranscript();
     const session = createSession();
     updateSession(session.id, { transcript, status: "ready" });
     return NextResponse.json({ sessionId: session.id });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to load transcript" },
+      { error: err instanceof Error ? err.message : "Failed to initialize" },
       { status: 500 }
     );
   }

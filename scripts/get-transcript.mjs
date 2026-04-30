@@ -4,9 +4,9 @@
 import { YoutubeTranscript } from "youtube-transcript";
 import { writeFileSync } from "fs";
 
-const videoId = "Z5myJ8dg_rM";
+const videoId = "aircAruvnKk";
 
-console.log("Fetching transcript for Khan Academy video...");
+console.log("Fetching transcript for 3Blue1Brown neural networks video...");
 
 let entries;
 try {
