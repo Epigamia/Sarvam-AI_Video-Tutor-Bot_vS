@@ -6,11 +6,11 @@ import { writeFileSync } from "fs";
 
 const videoId = "aircAruvnKk";
 
-console.log("Fetching transcript for 3Blue1Brown neural networks video...");
+console.log("Fetching English transcript for 3Blue1Brown neural networks video...");
 
 let entries;
 try {
-  entries = await YoutubeTranscript.fetchTranscript(videoId);
+  entries = await YoutubeTranscript.fetchTranscript(videoId, { lang: "en" });
 } catch (err) {
   console.error("Failed:", err.message);
   process.exit(1);
@@ -29,15 +29,15 @@ const transcript = entries
   .trim();
 
 console.log(`Transcript: ${transcript.length} characters, ${entries.length} segments`);
+console.log("Preview:", transcript.slice(0, 200));
 
 const output = `// Auto-generated — do not edit manually.
 // Regenerate with: npm install && node scripts/get-transcript.mjs
 
-const KHAN_TRANSCRIPT = ${JSON.stringify(transcript)};
+const VIDEO_TRANSCRIPT = ${JSON.stringify(transcript)};
 
-export default KHAN_TRANSCRIPT;
+export default VIDEO_TRANSCRIPT;
 `;
 
 writeFileSync("src/lib/transcript-content.ts", output);
 console.log("✓ Saved to src/lib/transcript-content.ts");
-console.log("Next: git add src/lib/transcript-content.ts && git commit -m 'Add transcript' && git push origin main");
