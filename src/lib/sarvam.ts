@@ -31,8 +31,18 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 }
 
 export async function textToSpeech(text: string): Promise<string> {
-  // bulbul:v2 supports up to 500 chars per input
-  const truncated = text.slice(0, 500);
+  // bulbul:v2 supports up to 500 chars — truncate at nearest sentence end
+  const limit = 500;
+  let truncated = text.slice(0, limit);
+  if (text.length > limit) {
+    const lastSentence = Math.max(
+      truncated.lastIndexOf(". "),
+      truncated.lastIndexOf("? "),
+      truncated.lastIndexOf("! "),
+      truncated.lastIndexOf("।")  // Hindi sentence end
+    );
+    if (lastSentence > 0) truncated = truncated.slice(0, lastSentence + 1);
+  }
 
   const response = await fetch(`${BASE_URL}/text-to-speech`, {
     method: "POST",
