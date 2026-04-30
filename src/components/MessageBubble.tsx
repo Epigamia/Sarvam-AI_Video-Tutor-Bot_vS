@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -11,9 +11,19 @@ interface MessageBubbleProps {
 export default function MessageBubble({ role, content, isStreaming }: MessageBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [ttsError, setTtsError] = useState("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   async function handleTTS() {
-    if (isPlaying || !content) return;
+    if (!content) return;
+
+    // If already playing, stop it
+    if (isPlaying) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setIsPlaying(false);
+      return;
+    }
+
     setIsPlaying(true);
     setTtsError("");
 
@@ -32,12 +42,13 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
         return;
       }
       if (data.audio) {
-        // Sarvam returns WAV audio at 8kHz
         const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
-        audio.onended = () => setIsPlaying(false);
+        audioRef.current = audio;
+        audio.onended = () => { setIsPlaying(false); audioRef.current = null; };
         audio.onerror = (e) => {
           console.error("Audio playback error:", e);
           setIsPlaying(false);
+          audioRef.current = null;
         };
         await audio.play();
       } else {
@@ -79,9 +90,8 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
           <div className="flex items-center gap-2 mt-2">
             <button
               onClick={handleTTS}
-              disabled={isPlaying}
-              className="text-gray-500 hover:text-blue-400 transition-colors disabled:text-blue-400"
-              title="Listen to response"
+              className="text-gray-500 hover:text-blue-400 transition-colors"
+              title={isPlaying ? "Stop" : "Listen to response"}
             >
               {isPlaying ? (
                 <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
