@@ -44,6 +44,9 @@ export async function textToSpeech(text: string): Promise<string> {
     if (lastSentence > 0) truncated = truncated.slice(0, lastSentence + 1);
   }
 
+  // Detect Hindi by presence of Devanagari script
+  const languageCode = /[ऀ-ॿ]/.test(truncated) ? "hi-IN" : "en-IN";
+
   const response = await fetch(`${BASE_URL}/text-to-speech`, {
     method: "POST",
     headers: {
@@ -52,7 +55,7 @@ export async function textToSpeech(text: string): Promise<string> {
     },
     body: JSON.stringify({
       inputs: [truncated],
-      target_language_code: "en-IN",
+      target_language_code: languageCode,
       speaker: "anushka",
       model: "bulbul:v2",
       pitch: 0,
