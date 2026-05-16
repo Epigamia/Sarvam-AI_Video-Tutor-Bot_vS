@@ -10,7 +10,7 @@ export async function transcribeAudio(filePath: string): Promise<string> {
   const fileName = path.basename(filePath);
   const blob = new Blob([fileBuffer], { type: "audio/wav" });
   formData.append("file", blob, fileName);
-  formData.append("model", "saarika:v2.5");
+  formData.append("model", "saaras:v3");
   formData.append("language_code", "unknown");
 
   const response = await fetch(`${BASE_URL}/speech-to-text`, {
@@ -31,8 +31,8 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 }
 
 export async function textToSpeech(text: string): Promise<string> {
-  // bulbul:v2 supports up to 500 chars — truncate at nearest sentence end
-  const limit = 500;
+  // bulbul:v3 supports up to 2500 chars — truncate at nearest sentence end
+  const limit = 2500;
   let truncated = text.slice(0, limit);
   if (text.length > limit) {
     const lastSentence = Math.max(
@@ -56,8 +56,8 @@ export async function textToSpeech(text: string): Promise<string> {
     body: JSON.stringify({
       inputs: [truncated],
       target_language_code: languageCode,
-      speaker: "anushka",
-      model: "bulbul:v2",
+      speaker: "shubh",
+      model: "bulbul:v3",
       pitch: 0,
       pace: 1.0,
       loudness: 1.5,
@@ -94,7 +94,7 @@ export async function chatCompletion(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "sarvam-m",
+      model: "sarvam-30b",
       messages,
       stream,
       temperature: 0.3,
