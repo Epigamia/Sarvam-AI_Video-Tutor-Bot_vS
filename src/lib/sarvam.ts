@@ -4,6 +4,19 @@ import path from "path";
 const API_KEY = process.env.SARVAM_API_KEY!;
 const BASE_URL = "https://api.sarvam.ai";
 
+function detectLanguageCode(text: string): string {
+  if (/[ঀ-৿]/.test(text)) return "bn-IN"; // Bengali
+  if (/[஀-௿]/.test(text)) return "ta-IN"; // Tamil
+  if (/[ఀ-౿]/.test(text)) return "te-IN"; // Telugu
+  if (/[ಀ-೿]/.test(text)) return "kn-IN"; // Kannada
+  if (/[ഀ-ൿ]/.test(text)) return "ml-IN"; // Malayalam
+  if (/[઀-૿]/.test(text)) return "gu-IN"; // Gujarati
+  if (/[਀-੿]/.test(text)) return "pa-IN"; // Punjabi
+  if (/[଀-୿]/.test(text)) return "od-IN"; // Odia
+  if (/[ऀ-ॿ]/.test(text)) return "hi-IN"; // Hindi/Marathi (Devanagari)
+  return "en-IN";                                    // Default English
+}
+
 export async function transcribeAudio(filePath: string): Promise<string> {
   const formData = new FormData();
   const fileBuffer = fs.readFileSync(filePath);
@@ -44,8 +57,7 @@ export async function textToSpeech(text: string): Promise<string> {
     if (lastSentence > 0) truncated = truncated.slice(0, lastSentence + 1);
   }
 
-  // Detect Hindi by presence of Devanagari script
-  const languageCode = /[ऀ-ॿ]/.test(truncated) ? "hi-IN" : "en-IN";
+  const languageCode = detectLanguageCode(truncated);
 
   const response = await fetch(`${BASE_URL}/text-to-speech`, {
     method: "POST",
