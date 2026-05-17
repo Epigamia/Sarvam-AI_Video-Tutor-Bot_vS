@@ -102,9 +102,11 @@ export async function POST(request: NextRequest) {
           // Translate the full response if needed, then emit it as one chunk
           if (needsTranslation && assistantMessage) {
             try {
-              assistantMessage = await translateText(assistantMessage, inputLanguage);
+              // Detect what language the model actually responded in (may not be English)
+              const modelResponseLanguage = detectLanguageCode(assistantMessage);
+              assistantMessage = await translateText(assistantMessage, inputLanguage, modelResponseLanguage);
             } catch {
-              // Translation failed — fall back to the English response
+              // Translation failed — fall back to whatever the model produced
             }
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ content: assistantMessage })}\n\n`)

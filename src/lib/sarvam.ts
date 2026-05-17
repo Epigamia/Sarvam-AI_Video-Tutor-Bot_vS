@@ -88,7 +88,7 @@ export async function textToSpeech(text: string): Promise<string> {
   return data.audios[0];
 }
 
-export async function translateText(text: string, targetLanguageCode: string): Promise<string> {
+export async function translateText(text: string, targetLanguageCode: string, sourceLanguageCode: string = "en-IN"): Promise<string> {
   const response = await fetch(`${BASE_URL}/translate`, {
     method: "POST",
     headers: {
@@ -97,7 +97,7 @@ export async function translateText(text: string, targetLanguageCode: string): P
     },
     body: JSON.stringify({
       input: text,
-      source_language_code: "en-IN",
+      source_language_code: sourceLanguageCode,
       target_language_code: targetLanguageCode,
       speaker_gender: "Female",
       mode: "formal",
