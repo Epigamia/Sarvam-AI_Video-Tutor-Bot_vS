@@ -40,11 +40,13 @@ export async function POST(request: NextRequest) {
       ...session.chatHistory,
     ];
 
-    // If we're going to translate the response, ask the model to reply in English
-    // so we get the highest quality source text for translation
-    if (needsTranslation) {
-      messages.push({ role: "system", content: "Reply in English only. Your response will be automatically translated to the user's language." });
-    }
+    // Inject a per-turn language instruction so chat history can never bleed language
+    const replyLanguage = inputLanguage === "hi-IN" ? "Hindi" : "English";
+    const translationNote = needsTranslation ? " The response will be automatically translated to the user's language." : "";
+    messages.push({
+      role: "system",
+      content: `IMPORTANT: For this response, reply in ${replyLanguage} only. Do not use any other language regardless of what language previous messages were in.${translationNote}`,
+    });
 
     const response = await chatCompletion(messages, true);
 
