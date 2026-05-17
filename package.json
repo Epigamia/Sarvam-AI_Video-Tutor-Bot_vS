@@ -14,11 +14,9 @@
     "fluent-ffmpeg": "^2.1.3",
     "next": "14.2.35",
     "react": "^18",
-    "react-dom": "^18",
-    "sarvamai": "^1.1.7"
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "youtube-transcript": "^1.2.1",
     "@types/fluent-ffmpeg": "^2.1.28",
     "@types/node": "^20",
     "@types/react": "^18",

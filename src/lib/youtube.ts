@@ -15,7 +15,7 @@ export function validateYouTubeUrl(url: string): boolean {
   return patterns.some((p) => p.test(url));
 }
 
-export function extractVideoId(url: string): string | null {
+function extractVideoId(url: string): string | null {
   const patterns = [
     /[?&]v=([\w-]+)/,
     /youtu\.be\/([\w-]+)/,
