@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, updateSession, createSession } from "@/lib/session";
 import { buildSystemPrompt } from "@/lib/prompts";
-import { chatCompletion, LLMMessage } from "@/lib/sarvam";
+import { chatCompletion, LLMMessage, detectLanguageCode, translateText } from "@/lib/sarvam";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,11 +30,21 @@ export async function POST(request: NextRequest) {
 
     session.chatHistory.push({ role: "user", content: message });
 
+    const inputLanguage = detectLanguageCode(message);
+    // Languages the model handles natively; everything else gets translated
+    const needsTranslation = !["en-IN", "hi-IN"].includes(inputLanguage);
+
     const systemPrompt = buildSystemPrompt(session.transcript);
     const messages: LLMMessage[] = [
       { role: "system", content: systemPrompt },
       ...session.chatHistory,
     ];
+
+    // If we're going to translate the response, ask the model to reply in English
+    // so we get the highest quality source text for translation
+    if (needsTranslation) {
+      messages.push({ role: "system", content: "Reply in English only. Your response will be automatically translated to the user's language." });
+    }
 
     const response = await chatCompletion(messages, true);
 
@@ -74,14 +84,29 @@ export async function POST(request: NextRequest) {
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   assistantMessage += content;
-                  controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-                  );
+                  // Only stream chunks live when no translation is needed
+                  if (!needsTranslation) {
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+                    );
+                  }
                 }
               } catch {
                 // skip unparseable lines
               }
             }
+          }
+
+          // Translate the full response if needed, then emit it as one chunk
+          if (needsTranslation && assistantMessage) {
+            try {
+              assistantMessage = await translateText(assistantMessage, inputLanguage);
+            } catch {
+              // Translation failed — fall back to the English response
+            }
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ content: assistantMessage })}\n\n`)
+            );
           }
 
           session!.chatHistory.push({

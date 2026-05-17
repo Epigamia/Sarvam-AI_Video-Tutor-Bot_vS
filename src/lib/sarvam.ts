@@ -4,7 +4,7 @@ import path from "path";
 const API_KEY = process.env.SARVAM_API_KEY!;
 const BASE_URL = "https://api.sarvam.ai";
 
-function detectLanguageCode(text: string): string {
+export function detectLanguageCode(text: string): string {
   if (/[ঀ-৿]/.test(text)) return "bn-IN"; // Bengali
   if (/[஀-௿]/.test(text)) return "ta-IN"; // Tamil
   if (/[ఀ-౿]/.test(text)) return "te-IN"; // Telugu
@@ -86,6 +86,33 @@ export async function textToSpeech(text: string): Promise<string> {
     throw new Error(`TTS returned no audio. Response: ${JSON.stringify(data)}`);
   }
   return data.audios[0];
+}
+
+export async function translateText(text: string, targetLanguageCode: string): Promise<string> {
+  const response = await fetch(`${BASE_URL}/translate`, {
+    method: "POST",
+    headers: {
+      "api-subscription-key": API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: text,
+      source_language_code: "en-IN",
+      target_language_code: targetLanguageCode,
+      speaker_gender: "Female",
+      mode: "formal",
+      model: "mayura:v1",
+      enable_preprocessing: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Translation failed (${response.status}): ${error}`);
+  }
+
+  const data = await response.json();
+  return data.translated_text || text;
 }
 
 export interface LLMMessage {
